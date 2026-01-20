@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kriss's RNG Game</title>
+    <title>Kriss's RNG Game v1.6</title>
     <style>
         :root {
             --bg: #0b0b0f;
@@ -18,6 +18,7 @@
             --success: #00b894;
             --success-glow: rgba(0, 184, 148, 0.5);
             --danger: #d63031;
+            --danger-glow: rgba(214, 48, 49, 0.5);
             --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -60,20 +61,18 @@
         }
         #aura-rarity { font-size: 1rem; margin-top: 5px; color: var(--text-muted); }
 
-        /* --- Roll Button & Lucky Mechanics --- */
+        /* --- Roll Button --- */
         #roll-container { position: relative; display: flex; flex-direction: column; align-items: center; }
         
         #roll-btn {
             background: var(--accent); color: white; border: none; padding: 20px 60px;
             font-size: 1.5rem; border-radius: 50px; cursor: pointer; font-weight: bold;
             box-shadow: 0 10px 30px var(--accent-glow);
-            transition: all 0.3s var(--bounce);
-            z-index: 5;
+            transition: all 0.3s var(--bounce); z-index: 5;
         }
         #roll-btn:active { transform: scale(0.95); }
         #roll-btn:disabled { background: #333; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
         
-        /* Lucky State */
         #roll-btn.lucky {
             background: var(--gold); color: #2d3436;
             box-shadow: 0 0 40px var(--gold-glow), inset 0 0 15px rgba(255,255,255,0.8);
@@ -104,9 +103,7 @@
             display: flex; justify-content: center; align-items: center;
         }
         #resize-handle::after { content: ''; width: 40px; height: 4px; background: #444; border-radius: 2px; }
-        #resize-handle:hover { background: #2a2a35; }
 
-        /* Cooldown Bar */
         #cooldown-container { width: 100%; height: 4px; background: #111; position: relative; }
         #cooldown-bar {
             position: absolute; top: 0; bottom: 0; left: 50%; width: 0;
@@ -114,7 +111,6 @@
             box-shadow: 0 0 10px white; will-change: width;
         }
 
-        /* Tabs & Auto Switch */
         .tabs { display: flex; background: #1a1a20; border-bottom: 1px solid var(--panel-border); align-items: center; }
         .tab-btn {
             flex: 1; padding: 12px; background: none; border: none; color: var(--text-muted);
@@ -123,7 +119,6 @@
         .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.03); }
         .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(108, 92, 231, 0.05); }
 
-        /* Auto Toggle */
         #auto-wrapper {
             padding: 0 15px; display: flex; align-items: center; gap: 10px; border-left: 1px solid var(--panel-border); height: 100%;
         }
@@ -139,20 +134,36 @@
         }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(16px); }
-        input:disabled + .slider { background-color: #222; cursor: not-allowed; opacity: 0.5; }
 
-        /* --- Tab Content --- */
+        /* --- Content & Items --- */
         .tab-content { flex: 1; position: relative; overflow: hidden; display: none; background: var(--bg); }
         .tab-content.active { display: block; }
-        
         .content-scroll { 
             padding: 15px; overflow-y: auto; height: 100%; 
             display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             align-content: start;
         }
-        #tab-inventory .content-scroll { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 
-        /* Cards */
+        /* Settings Tab Styles */
+        #tab-settings .content-scroll { display: flex; flex-direction: column; gap: 20px; }
+        .settings-section {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--panel-border);
+            padding: 15px; border-radius: 8px;
+        }
+        .settings-section h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--text-muted); border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .action-btn {
+            flex: 1; padding: 10px; border: 1px solid #444; background: #222; color: white;
+            border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.2s;
+        }
+        .action-btn:hover { background: #333; border-color: #666; }
+        .action-btn.danger { border-color: #d63031; color: #d63031; background: rgba(214, 48, 49, 0.05); }
+        .action-btn.danger:hover { background: #d63031; color: white; }
+        .warning-text { color: var(--danger); font-size: 0.8rem; margin-top: 5px; display: none; }
+        .warning-text.visible { display: block; animation: shake 0.3s; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
+
+        /* General Card & Item Styles */
         .card {
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
             padding: 10px; border-radius: 6px; display: flex; flex-direction: column;
@@ -165,16 +176,23 @@
             background: #333; color: white; border: none; padding: 6px; border-radius: 4px;
             cursor: pointer; width: 100%; font-size: 0.8rem; font-weight: 600; margin-top: auto;
         }
-        .card button:hover:not(:disabled) { background: var(--accent); }
-        
+
+        /* Inventory Item */
         .inv-item {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; flex-direction: column; gap: 5px;
             background: rgba(0,0,0,0.2); padding: 8px 10px; border-radius: 4px;
             border-left: 3px solid transparent; cursor: help;
         }
-        .inv-count { font-weight: bold; color: var(--text-muted); font-size: 0.85rem; }
+        .inv-head { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .inv-name { font-weight: bold; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+        .inv-count { color: var(--text-muted); font-size: 0.8rem; }
+        .sell-btn {
+            background: rgba(214, 48, 49, 0.1); border: 1px solid #d63031; color: #d63031;
+            font-size: 0.7rem; padding: 2px 0; cursor: pointer; border-radius: 3px; width: 100%;
+        }
+        .sell-btn:hover { background: #d63031; color: white; }
 
-        /* --- TREE SYSTEM --- */
+        /* Tree Styles */
         #tree-viewport {
             width: 100%; height: 100%; overflow: hidden; position: relative;
             background-image: radial-gradient(#2a2a35 1px, transparent 1px);
@@ -182,7 +200,6 @@
         }
         #tree-viewport:active { cursor: grabbing; }
         #tree-container { transform-origin: 0 0; position: absolute; top: 0; left: 0; }
-
         .tree-node {
             position: absolute; width: 44px; height: 44px;
             background: #1a1a1a; border: 2px solid #444; border-radius: 50%;
@@ -190,58 +207,35 @@
             color: #666; font-weight: bold; cursor: pointer;
             transition: all 0.3s var(--bounce); z-index: 2;
         }
-        .tree-node:hover { transform: scale(1.3); z-index: 10; }
-        
-        /* Node States */
         .tree-node.unlocked { border-color: var(--success); color: var(--success); background: #0f2b23; box-shadow: 0 0 15px var(--success-glow); }
-        .tree-node.available { border-color: var(--accent); color: #fff; background: var(--panel); box-shadow: 0 0 10px var(--accent-glow); animation: pulse 2s infinite; }
-        
-        /* Expansion Node Style */
-        .tree-node.expansion {
-            width: 54px; height: 54px; border-radius: 8px; border-width: 3px;
-            border-color: #e17055; color: #e17055;
-        }
-        .tree-node.expansion.unlocked { background: #5a2a1e; border-color: #ff7675; color: #ff7675; box-shadow: 0 0 20px rgba(255, 118, 117, 0.4); }
-
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--accent-glow); } 70% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
-
-        /* SVG Lines */
-        svg.connections { position: absolute; top: 0; left: 0; width: 4000px; height: 4000px; z-index: 1; pointer-events: none; }
-        path.conn-line { fill: none; stroke: #333; stroke-width: 3; transition: stroke 0.4s; }
-        
-        /* Line Colors */
+        .tree-node.available { border-color: var(--accent); color: #fff; background: var(--panel); box-shadow: 0 0 10px var(--accent-glow); }
+        .tree-node.expansion { width: 54px; height: 54px; border-radius: 8px; border-width: 3px; border-color: #e17055; color: #e17055; }
+        svg.connections { position: absolute; top: 0; left: 0; width: 6000px; height: 6000px; z-index: 1; pointer-events: none; }
+        path.conn-line { fill: none; stroke: #333; stroke-width: 3; }
         path.conn-line.owned { stroke: var(--success); opacity: 0.8; }
         path.conn-line.available { stroke: var(--accent); stroke-dasharray: 6; opacity: 0.5; }
-        path.conn-line.blocked { stroke: var(--danger); opacity: 0.3; }
-
         #tree-controls { position: absolute; top: 15px; right: 15px; display: flex; gap: 5px; z-index: 10; }
         .zoom-btn { width: 32px; height: 32px; background: rgba(0,0,0,0.8); border: 1px solid #444; color: white; border-radius: 4px; cursor: pointer; }
-        .zoom-btn:hover { background: var(--accent); border-color: var(--accent); }
 
-        /* --- UI Overlays --- */
-        #tooltip {
-            position: fixed; pointer-events: none; z-index: 9999;
-            background: rgba(10, 10, 15, 0.98); border: 1px solid var(--panel-border);
-            border-radius: 6px; padding: 12px; min-width: 220px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9); opacity: 0; transition: opacity 0.1s;
-        }
-        #tooltip.visible { opacity: 1; }
-        #tooltip h3 { margin: 0 0 6px 0; font-size: 1rem; color: white; border-bottom: 1px solid #333; padding-bottom: 6px; }
-        #tooltip .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; }
-        #tooltip .val { color: white; font-weight: bold; }
-        #tooltip .desc { color: #aaa; margin-top: 8px; font-size: 0.75rem; line-height: 1.4; font-style: italic; }
-        #tooltip .cost { margin-top: 8px; font-weight: bold; color: var(--gold); text-align: right; font-size: 0.9rem; border-top: 1px solid #333; padding-top: 5px; }
-        #tooltip .cost.locked { color: var(--danger); }
-
+        /* Toast & Buffs */
         #active-buffs { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 5px; z-index: 5; }
         .buff { font-size: 0.75rem; color: #000; font-weight: bold; background: var(--success); padding: 4px 8px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        
         #toast-container { position: fixed; bottom: 350px; right: 20px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; z-index: 100; }
         .toast {
             background: rgba(20, 20, 30, 0.95); border-left: 4px solid var(--accent); color: white;
             padding: 10px 20px; border-radius: 4px; animation: slideIn 0.3s var(--bounce);
         }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        #tooltip {
+            position: fixed; pointer-events: none; z-index: 9999;
+            background: rgba(10, 10, 15, 0.98); border: 1px solid var(--panel-border);
+            border-radius: 6px; padding: 12px; min-width: 220px; opacity: 0; transition: opacity 0.1s;
+        }
+        #tooltip.visible { opacity: 1; }
+        #tooltip h3 { margin: 0 0 6px 0; font-size: 1rem; color: white; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        #tooltip .row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; }
+        #tooltip .val { color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -262,17 +256,16 @@
                 <label>Luck</label>
                 <value id="stat-luck">1.0x</value>
             </div>
+            <div class="stat" style="text-align: right; color:#888; font-size:0.8rem; align-self:center;">v1.6</div>
         </div>
     </header>
 
     <main id="main-stage">
         <div id="active-buffs"></div>
-
         <div id="aura-display" onmouseenter="Tooltip.showCurrentAura()" onmouseleave="Tooltip.hide()">
-            <h1 id="aura-name">Solis RNG</h1>
+            <h1 id="aura-name">Kriss's RNG Game</h1>
             <div id="aura-rarity">Begin the Cycle</div>
         </div>
-
         <div id="roll-container">
             <button id="roll-btn">ROLL</button>
             <div id="lucky-counter">Lucky Roll: 0/10</div>
@@ -288,6 +281,7 @@
             <button class="tab-btn" onclick="switchTab('tree')">Tree</button>
             <button class="tab-btn" onclick="switchTab('shop')">Shop</button>
             <button class="tab-btn" onclick="switchTab('crafting')">Crafting</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️</button>
             
             <div id="auto-wrapper" title="Unlock Auto-Roll in Tree first">
                 <span style="font-size:0.75rem; font-weight:bold; color:#888;">AUTO</span>
@@ -315,6 +309,28 @@
 
         <div id="tab-shop" class="tab-content"><div class="content-scroll"></div></div>
         <div id="tab-crafting" class="tab-content"><div class="content-scroll"></div></div>
+        
+        <div id="tab-settings" class="tab-content">
+            <div class="content-scroll">
+                <div class="settings-section">
+                    <h3>Save Management</h3>
+                    <p>Back up your save to your clipboard or import a code. (Auto-saves every 30s)</p>
+                    <div class="btn-group">
+                        <button class="action-btn" onclick="SaveSystem.export()">Export Save</button>
+                        <button class="action-btn" onclick="SaveSystem.import()">Import Save</button>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="border-color: rgba(214, 48, 49, 0.3);">
+                    <h3 style="color: #d63031;">Danger Zone</h3>
+                    <p>Permanently delete all progress. This cannot be undone.</p>
+                    <div class="btn-group">
+                        <button class="action-btn danger" id="reset-btn" onclick="SaveSystem.confirmReset()">Reset Everything</button>
+                    </div>
+                    <div id="reset-warning" class="warning-text">⚠️ This action is irreversible! Click again to confirm.</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="tooltip"></div>
@@ -322,15 +338,11 @@
 
 <script>
 /**
- * Kriss's game
- * - Full Potion/Shop restoration
- * - Expansion Nodes Logic
- * - Green/Red Path Lines
- * - Guaranteed Lucky Roll (10th)
- * - Auto-Roll Toggle
+ * Kriss's RNG Game v1.6: PERSISTENCE UPDATE
+ * - Implementation of Save/Load (Base64)
+ * - Full Reset with Double Confirmation
+ * - State architecture refactor
  */
-
-// --- CONFIGURATION ---
 
 const CONFIG = {
     auraCount: 125,
@@ -355,8 +367,7 @@ const WORDS = {
     suffixes: ["Spark", "Dust", "Flame", "Wave", "Mist", "Stone", "Wind", "Storm", "Pulse", "Shard", "Soul", "Gate", "Matter", "Energy", "Construct", "Dream", "Nightmare", "Singularity", "Essence", "Light", "Darkness"]
 };
 
-// --- DATA GENERATION ---
-
+// --- DATA ---
 const AURAS = [];
 function generateAuras() {
     for (let i = 0; i < CONFIG.auraCount; i++) {
@@ -364,117 +375,201 @@ function generateAuras() {
         if(i > 25) tierIdx = 1; if(i > 50) tierIdx = 2; if(i > 70) tierIdx = 3;
         if(i > 85) tierIdx = 4; if(i > 95) tierIdx = 5; if(i > 100) tierIdx = 6;
         if(i > 105) tierIdx = 7; if(i > 110) tierIdx = 8; if(i === 124) tierIdx = 9;
-
         const tier = CONFIG.rarityTiers[tierIdx];
         const p = WORDS.prefixes[Math.floor(Math.random() * WORDS.prefixes.length)];
         const s = WORDS.suffixes[Math.floor(Math.random() * WORDS.suffixes.length)];
-        const uniqueName = i === 124 ? "SOLIS: GENESIS" : `${p} ${s}`;
-        const baseOdds = Math.floor(tier.chance * (1 + (i % 5) * 0.15));
-
         AURAS.push({
-            id: `aura_${i}`, name: uniqueName, tier: tierIdx, rarity: baseOdds,
-            coins: Math.max(1, Math.floor(tier.coinMult * (1 + Math.random()*0.1))),
-            color: tier.color
+            id: `aura_${i}`, name: i === 124 ? "SOLIS: GENESIS" : `${p} ${s}`, tier: tierIdx, rarity: Math.floor(tier.chance * (1 + (i % 5) * 0.15)),
+            coins: Math.max(1, Math.floor(tier.coinMult * (1 + Math.random()*0.1))), color: tier.color
         });
     }
     AURAS.sort((a, b) => b.rarity - a.rarity);
 }
 generateAuras();
 
-// --- UPGRADE TREE ---
-// Includes Expansion Nodes that hide children until unlocked
-const G = 90; // Grid Size
+const G = 90;
 const TREE_NODES = [
-    // ROOT
-    { id: 'root', x: 0, y: 0, icon: '🏠', name: "Awakening", cost: 0, parents: [], type: 'root', desc: "Where it all begins." },
-
-    // LUCK PATH (Left)
+    { id: 'root', x: 0, y: 0, icon: '🏠', name: "Awakening", cost: 0, parents: [], type: 'root', desc: "Start" },
     { id: 'l1', x: -1*G, y: 0, icon: '🍀', name: "Luck I", cost: 50, parents: ['root'], type: 'luck', val: 0.1, desc: "+0.1x Luck" },
     { id: 'l2', x: -2*G, y: 0, icon: '🍀', name: "Luck II", cost: 250, parents: ['l1'], type: 'luck', val: 0.2, desc: "+0.2x Luck" },
     { id: 'l3', x: -3*G, y: 0, icon: '🍀', name: "Luck III", cost: 1200, parents: ['l2'], type: 'luck', val: 0.3, desc: "+0.3x Luck" },
-
-    // SPEED PATH (Right)
-    { id: 's1', x: 1*G, y: 0, icon: '⚡', name: "Speed I", cost: 100, parents: ['root'], type: 'speed', val: 0.1, desc: "+10% Roll Speed" },
-    { id: 's2', x: 2*G, y: 0, icon: '⚡', name: "Speed II", cost: 400, parents: ['s1'], type: 'speed', val: 0.15, desc: "+15% Roll Speed" },
-    { id: 'auto', x: 2*G, y: 1*G, icon: '🤖', name: "Auto-Roll", cost: 2500, parents: ['s2'], type: 'unlock_auto', val: 1, desc: "Unlocks Auto-Switch" },
-    
-    // WEALTH PATH (Down)
+    { id: 's1', x: 1*G, y: 0, icon: '⚡', name: "Speed I", cost: 100, parents: ['root'], type: 'speed', val: 0.1, desc: "+10% Speed" },
+    { id: 's2', x: 2*G, y: 0, icon: '⚡', name: "Speed II", cost: 400, parents: ['s1'], type: 'speed', val: 0.15, desc: "+15% Speed" },
+    { id: 'auto', x: 2*G, y: 1*G, icon: '🤖', name: "Auto-Roll", cost: 2500, parents: ['s2'], type: 'unlock_auto', val: 1, desc: "Unlocks Auto Switch" },
+    { id: 's3', x: 3*G, y: 0, icon: '⚡', name: "Speed III", cost: 1500, parents: ['s2'], type: 'speed', val: 0.2, desc: "+20% Speed" },
     { id: 'c1', x: 0, y: 1*G, icon: '💰', name: "Coins I", cost: 75, parents: ['root'], type: 'coin', val: 0.2, desc: "+20% Coins" },
     { id: 'c2', x: 0, y: 2*G, icon: '💰', name: "Coins II", cost: 350, parents: ['c1'], type: 'coin', val: 0.3, desc: "+30% Coins" },
-    
-    // --- EXPANSION NODES (Upwards & Special) ---
-    // Expansion 1: Void Gate (Up)
-    { id: 'exp_void', x: 0, y: -2*G, icon: '🌌', name: "Void Gate", cost: 5000, parents: ['root'], type: 'expansion', desc: "Reveals Void Path" },
-    // Hidden Nodes (Requires exp_void)
-    { id: 'v_luck', x: -1*G, y: -3*G, icon: '🧿', name: "Void Luck", cost: 8000, parents: ['exp_void'], type: 'luck', val: 0.5, desc: "+0.5x Luck", reqExp: 'exp_void' },
-    { id: 'v_speed', x: 1*G, y: -3*G, icon: '🚀', name: "Void Speed", cost: 8000, parents: ['exp_void'], type: 'speed', val: 0.3, desc: "+30% Speed", reqExp: 'exp_void' },
-    
-    // Expansion 2: Golden Throne (Hidden off Wealth)
-    { id: 'exp_gold', x: 0, y: 3*G, icon: '👑', name: "Gold Throne", cost: 10000, parents: ['c2'], type: 'expansion', desc: "Reveals Royal Path" },
-    { id: 'g_lucky', x: 0, y: 4*G, icon: '🌟', name: "Fortune", cost: 15000, parents: ['exp_gold'], type: 'luck_roll_buff', val: 0.5, desc: "Lucky Roll gives +0.5x Bonus", reqExp: 'exp_gold' }
+    { id: 'c3', x: 0, y: 3*G, icon: '💰', name: "Coins III", cost: 1500, parents: ['c2'], type: 'coin', val: 0.4, desc: "+40% Coins" },
+    { id: 'c5', x: 0, y: 5*G, icon: '💎', name: "Tycoon", cost: 20000, parents: ['c3'], type: 'coin', val: 1.0, desc: "Double Coins" },
+    { id: 'exp_void', x: 0, y: -2*G, icon: '🌌', name: "Void Gate", cost: 4000, parents: ['root'], type: 'expansion', desc: "Unlocks Void Path" },
+    { id: 'v_luck', x: -1*G, y: -3*G, icon: '🧿', name: "Void Luck", cost: 6000, parents: ['exp_void'], type: 'luck', val: 0.5, desc: "+0.5 Luck", reqExp: 'exp_void' },
+    { id: 'exp_time', x: 4*G, y: 1*G, icon: '⏳', name: "Chronos", cost: 12000, parents: ['s3'], type: 'expansion', desc: "Time Manipulation" },
+    { id: 't_haste', x: 5*G, y: 1*G, icon: '⏩', name: "Temporal Haste", cost: 20000, parents: ['exp_time'], type: 'speed', val: 0.6, desc: "+60% Speed", reqExp: 'exp_time' }
 ];
 
 const SHOP_ITEMS = [
     { id: 'pot_luck_s', name: "Minor Luck Potion", cost: 100, duration: 30000, type: 'luck', val: 1.5, desc: "1.5x Luck (30s)" },
-    { id: 'pot_luck_l', name: "Major Luck Potion", cost: 500, duration: 60000, type: 'luck', val: 2.5, desc: "2.5x Luck (60s)" },
-    { id: 'pot_speed', name: "Haste Vial", cost: 250, duration: 45000, type: 'speed', val: 2.0, desc: "2x Speed (45s)" },
-    { id: 'pot_max', name: "Fortune Elixir", cost: 2000, duration: 15000, type: 'luck', val: 5.0, desc: "5.0x Luck (15s)" }
+    { id: 'pot_speed', name: "Haste Vial", cost: 250, duration: 45000, type: 'speed', val: 2.0, desc: "2x Speed (45s)" }
 ];
 
 const RECIPES = [
     { id: 'r1', output: 'coins', amount: 100, inputTier: 0, count: 10, desc: "10 Common -> 100 Coins" },
-    { id: 'r2', output: 'pot_luck_s', inputTier: 1, count: 5, desc: "5 Uncommon -> Minor Luck Pot" },
-    { id: 'r3', output: 'gamble_rare', inputTier: 1, count: 10, desc: "10 Uncommon -> Random Rare" },
-    { id: 'r4', output: 'pot_speed', inputTier: 2, count: 3, desc: "3 Rare -> Haste Vial" },
-    { id: 'r5', output: 'gamble_epic', inputTier: 2, count: 8, desc: "8 Rare -> Random Epic" }
+    { id: 'r2', output: 'pot_luck_s', inputTier: 1, count: 5, desc: "5 Uncommon -> Minor Luck Pot" }
 ];
 
-// --- STATE ---
+// --- STATE MANAGEMENT ---
 
-let state = {
+const DEFAULT_STATE = {
     rolls: 0,
     coins: 0,
     inventory: {},
     tree: { 'root': true },
-    luckyProgress: 0, // 0 to 10
-    autoEnabled: false
+    luckyProgress: 0,
+    autoEnabled: false,
+    activeBuffs: [], // Moved buffs to state for persistence
+    savedCooldown: 0
 };
 
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE)); // Deep copy default
 let session = {
-    activeBuffs: [],
     lastRollTime: 0,
     currentCooldown: CONFIG.baseCooldown,
     currentAura: null,
-    tree: { x: window.innerWidth/2, y: window.innerHeight/3, scale: 1, dragging: false, lx: 0, ly: 0 }
+    tree: { x: window.innerWidth/2, y: window.innerHeight/3, scale: 1, dragging: false, lx: 0, ly: 0 },
+    resetStage: 0
 };
-
-// --- LOGIC ---
 
 const RNG = {
     getLuck: () => {
         let mult = 1.0;
-        // Tree Upgrades
         TREE_NODES.forEach(n => { if(state.tree[n.id] && n.type==='luck') mult += n.val; });
-        
-        // Potion Stacking (Max of type)
-        const luckPots = session.activeBuffs.filter(b => b.type === 'luck');
-        if(luckPots.length > 0) mult *= Math.max(...luckPots.map(p => p.val));
-        
-        // Lucky Roll Bonus (1.15x Base + Upgrades)
-        if(state.luckyProgress >= CONFIG.luckyThreshold) {
-            let luckyBonus = 1.15;
-            TREE_NODES.forEach(n => { if(state.tree[n.id] && n.type==='luck_roll_buff') luckyBonus += n.val; });
-            mult *= luckyBonus;
-        }
-        
+        if(state.activeBuffs.length) mult *= Math.max(1, ...state.activeBuffs.filter(b=>b.type==='luck').map(p=>p.val));
+        if(state.luckyProgress >= CONFIG.luckyThreshold) mult *= 1.15; // Basic Lucky bonus
         return mult;
     },
     getSpeedMult: () => {
         let mult = 1.0;
         TREE_NODES.forEach(n => { if(state.tree[n.id] && n.type==='speed') mult += n.val; });
-        const speedPots = session.activeBuffs.filter(b => b.type === 'speed');
-        if(speedPots.length > 0) mult *= Math.max(...speedPots.map(p => p.val));
+        if(state.activeBuffs.length) mult *= Math.max(1, ...state.activeBuffs.filter(b=>b.type==='speed').map(p=>p.val));
         return mult;
+    }
+};
+
+const SaveSystem = {
+    encode: () => {
+        // Prepare data: filter expired buffs, save remaining time on cooldown
+        const now = Date.now();
+        state.activeBuffs = state.activeBuffs.filter(b => b.expireTime > now);
+        
+        // Calculate remaining cooldown relative to now
+        const timeSinceRoll = now - session.lastRollTime;
+        state.savedCooldown = (timeSinceRoll < session.currentCooldown) ? (session.currentCooldown - timeSinceRoll) : 0;
+
+        // Create save object with timestamp
+        const saveObj = {
+            v: "1.6",
+            ts: now,
+            data: state
+        };
+        return btoa(JSON.stringify(saveObj));
+    },
+    saveLocal: () => {
+        try {
+            localStorage.setItem("solis_save", SaveSystem.encode());
+            // Silent save
+        } catch(e) { console.error("Auto-save failed", e); }
+    },
+    loadLocal: () => {
+        const str = localStorage.getItem("solis_save");
+        if(str) SaveSystem.decode(str);
+    },
+    export: () => {
+        const str = SaveSystem.encode();
+        navigator.clipboard.writeText(str).then(() => UI.toast("Save copied to clipboard!", "success"));
+    },
+    import: () => {
+        const str = prompt("Paste your save string here:");
+        if(str) {
+            if(SaveSystem.decode(str)) UI.toast("Save Loaded Successfully!", "success");
+            else UI.toast("Invalid Save String", "error");
+        }
+    },
+    decode: (str) => {
+        try {
+            const raw = atob(str);
+            const obj = JSON.parse(raw);
+            if(!obj.data) return false;
+            
+            state = obj.data;
+            
+            // Restore Session Logic
+            const now = Date.now();
+            
+            // Fix Buff Timestamps: Buffs were saved with absolute times. 
+            // If we load an old save, buffs expire. 
+            // If we want buffs to "pause" while offline, we would need to save remaining duration.
+            // For this implementation, we assume time passes while offline.
+            state.activeBuffs = state.activeBuffs.filter(b => b.expireTime > now);
+            
+            // Restore Cooldown
+            if(state.savedCooldown > 0) {
+                session.currentCooldown = state.savedCooldown; // Temporary override
+                session.lastRollTime = now; // Treat as if we just rolled so the bar fills up
+            } else {
+                session.lastRollTime = 0; // Ready to roll
+            }
+
+            // Restore Auto Switch
+            document.getElementById('auto-check').checked = state.autoEnabled;
+            if(state.tree['auto']) document.getElementById('auto-check').disabled = false;
+
+            // UI Updates
+            UI.updateStats();
+            UI.updateInventory();
+            Tree.render();
+            UI.renderBuffs();
+            return true;
+        } catch(e) {
+            console.error(e);
+            return false;
+        }
+    },
+    confirmReset: () => {
+        const btn = document.getElementById('reset-btn');
+        const warn = document.getElementById('reset-warning');
+        
+        if(session.resetStage === 0) {
+            session.resetStage = 1;
+            btn.innerText = "Are you sure?";
+            warn.classList.add('visible');
+        } else if (session.resetStage === 1) {
+            session.resetStage = 2;
+            btn.innerText = "CONFIRM DELETION";
+            btn.style.background = "#d63031";
+            btn.style.color = "white";
+        } else {
+            SaveSystem.hardReset();
+        }
+    },
+    hardReset: () => {
+        localStorage.removeItem("solis_save");
+        state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        session.resetStage = 0;
+        
+        // UI Reset
+        document.getElementById('reset-btn').innerText = "Reset Everything";
+        document.getElementById('reset-btn').style.background = "";
+        document.getElementById('reset-btn').style.color = "";
+        document.getElementById('reset-warning').classList.remove('visible');
+        document.getElementById('auto-check').checked = false;
+        document.getElementById('auto-check').disabled = true;
+
+        UI.toast("Game Reset Complete", "success");
+        UI.updateStats();
+        UI.updateInventory();
+        Tree.render();
+        UI.renderBuffs();
+        session.lastRollTime = 0; // Ready immediately
     }
 };
 
@@ -482,115 +577,71 @@ const Actions = {
     roll: () => {
         const now = Date.now();
         if (now - session.lastRollTime < session.currentCooldown) return;
-
         session.lastRollTime = now;
         
-        // Check Lucky
         const isLucky = state.luckyProgress >= CONFIG.luckyThreshold;
-
-        // RNG Logic
         const luck = RNG.getLuck();
-        let result = AURAS[AURAS.length-1]; // Fallback
+        let result = AURAS[AURAS.length-1];
         
-        // Iterate high rarity to low
         for (const aura of AURAS) {
-            // formula: if random * (rarity / luck) < 1, you get it
             if (Math.random() * (aura.rarity / luck) < 1) {
                 result = aura;
                 break;
             }
         }
-        
         session.currentAura = result;
-
-        // Coin Logic
         let coinMult = 1.0;
         TREE_NODES.forEach(n => { if(state.tree[n.id] && n.type==='coin') coinMult += n.val; });
         state.coins += Math.floor(result.coins * coinMult);
         state.rolls++;
         state.inventory[result.id] = (state.inventory[result.id] || 0) + 1;
 
-        // Update Lucky Counter
-        if(isLucky) {
-            state.luckyProgress = 0; // Reset
-            UI.toast("Lucky Roll Used!", "success");
-        } else {
-            state.luckyProgress++;
-        }
+        if(isLucky) { state.luckyProgress = 0; UI.toast("Lucky Roll Used!", "success"); } 
+        else { state.luckyProgress++; }
 
         UI.animateRoll(result, isLucky);
         UI.updateStats();
-        UI.updateInventory(); // Only updates if inventory tab active
+        UI.updateInventory();
 
-        // Cooldown Update
         session.currentCooldown = CONFIG.baseCooldown / RNG.getSpeedMult();
-        
-        // Button Disable
         const btn = document.getElementById('roll-btn');
         btn.disabled = true;
-        setTimeout(() => { 
-            if(!state.autoEnabled) btn.disabled = false; 
-        }, session.currentCooldown);
+        setTimeout(() => { if(!state.autoEnabled) btn.disabled = false; }, session.currentCooldown);
+        SaveSystem.saveLocal(); // Auto save on roll
     },
 
     toggleAuto: () => {
-        // Can only toggle if unlocked
         if (!state.tree['auto']) return;
-        
-        const checkbox = document.getElementById('auto-check');
-        state.autoEnabled = checkbox.checked;
-        
-        if(state.autoEnabled) UI.toast("Auto-Roll Active", "success");
-        else UI.toast("Auto-Roll Paused");
+        state.autoEnabled = document.getElementById('auto-check').checked;
+        UI.toast(state.autoEnabled ? "Auto-Roll Active" : "Auto-Roll Paused", state.autoEnabled ? "success" : "info");
     },
 
     buyNode: (id) => {
         if(state.tree[id]) return;
         const node = TREE_NODES.find(n => n.id === id);
-        
-        // Check Parents
         const parentsMet = node.parents.every(p => state.tree[p]);
         if(!parentsMet) { UI.toast("Locked path!", "error"); return; }
-        
         if(state.coins < node.cost) { UI.toast("Not enough coins!", "error"); return; }
 
         state.coins -= node.cost;
         state.tree[id] = true;
-        
-        // Specials
-        if(node.type === 'unlock_auto') {
-             document.getElementById('auto-check').disabled = false;
-             UI.toast("Auto-Roll Unlocked!", "success");
-        } else if(node.type === 'expansion') {
-             UI.toast("New Area Revealed!", "success");
-        } else {
-            UI.toast(`${node.name} Acquired!`, "success");
-        }
+        if(node.type === 'unlock_auto') { document.getElementById('auto-check').disabled = false; UI.toast("Auto-Roll Unlocked!", "success"); }
+        else UI.toast(`${node.name} Acquired!`, "success");
 
         UI.updateStats();
-        Tree.render(); // Redraw lines
+        Tree.render();
+        SaveSystem.saveLocal();
     },
 
     buyShop: (id) => {
         const item = SHOP_ITEMS.find(i => i.id === id);
         if(state.coins >= item.cost) {
             state.coins -= item.cost;
-            // Potion Logic: Stack Duration if same name
-            const existing = session.activeBuffs.find(b => b.name === item.name);
-            if(existing) {
-                existing.expireTime += item.duration;
-                UI.toast(`${item.name} Extended!`);
-            } else {
-                session.activeBuffs.push({ 
-                    type: item.type, val: item.val, name: item.name, expireTime: Date.now() + item.duration 
-                });
-                UI.toast(`${item.name} Active!`, "success");
-            }
-            UI.updateStats();
-            UI.renderBuffs();
-        } else {
-            UI.toast("Need more coins", "error");
-        }
+            const existing = state.activeBuffs.find(b => b.name === item.name);
+            if(existing) { existing.expireTime += item.duration; UI.toast(`${item.name} Extended!`); } 
+            else { state.activeBuffs.push({ type: item.type, val: item.val, name: item.name, expireTime: Date.now() + item.duration }); UI.toast(`${item.name} Active!`, "success"); }
+            UI.updateStats(); UI.renderBuffs();
+        } else { UI.toast("Need more coins", "error"); }
     },
     
     craft: (rid) => {
@@ -599,7 +650,6 @@ const Actions = {
         let needed = rcp.count;
         let consumed = {};
 
-        // Auto-select auras to consume
         for(let a of invAuras) {
             let has = state.inventory[a.id] || 0;
             if(has > 0) {
@@ -609,54 +659,31 @@ const Actions = {
                 if(needed <= 0) break;
             }
         }
-
         if(needed > 0) { UI.toast(`Need ${rcp.count} Tier ${rcp.inputTier} Auras`, "error"); return; }
-
-        // Remove items
         for(let id in consumed) state.inventory[id] -= consumed[id];
         
-        // Give Reward
-        if(rcp.output === 'coins') { 
-            state.coins += rcp.amount; 
-            UI.toast(`+${rcp.amount} Coins`); 
-        } else if (rcp.output.startsWith('gamble')) {
-             const tier = rcp.output === 'gamble_rare' ? 2 : 3;
-             const pool = AURAS.filter(a => a.tier === tier);
-             const res = pool[Math.floor(Math.random()*pool.length)];
-             state.inventory[res.id] = (state.inventory[res.id] || 0) + 1;
-             UI.toast(`Crafted: ${res.name}`, "success");
-        } else {
-            // Potion
+        if(rcp.output === 'coins') { state.coins += rcp.amount; UI.toast(`+${rcp.amount} Coins`); } 
+        else {
             const item = SHOP_ITEMS.find(i => i.id === rcp.output);
             if(item) {
-                const existing = session.activeBuffs.find(b => b.name === item.name);
+                const existing = state.activeBuffs.find(b => b.name === item.name);
                 if(existing) existing.expireTime += item.duration;
-                else session.activeBuffs.push({ type: item.type, val: item.val, name: item.name, expireTime: Date.now() + item.duration });
+                else state.activeBuffs.push({ type: item.type, val: item.val, name: item.name, expireTime: Date.now() + item.duration });
                 UI.toast("Potion Brewed!", "success");
             }
         }
-        UI.updateStats();
-        UI.updateInventory();
-    }
-};
+        UI.updateStats(); UI.updateInventory();
+    },
 
-// --- VISUALS & TREE ---
-
-const Resizer = {
-    init: () => {
-        const h = document.getElementById('resize-handle');
-        const p = document.getElementById('controls-wrapper');
-        let isResizing = false;
-        
-        h.addEventListener('mousedown', (e) => {
-            isResizing = true; e.preventDefault();
-        });
-        window.addEventListener('mouseup', () => isResizing = false);
-        window.addEventListener('mousemove', (e) => {
-            if(!isResizing) return;
-            const h = window.innerHeight - e.clientY;
-            p.style.height = Math.max(200, Math.min(window.innerHeight*0.75, h)) + 'px';
-        });
+    sell: (id) => {
+        if(!state.inventory[id] || state.inventory[id] <= 0) return;
+        const aura = AURAS.find(a => a.id === id);
+        const val = Math.floor(aura.coins * 0.1);
+        state.inventory[id]--;
+        state.coins += val;
+        UI.toast(`Sold for ${val} coins`);
+        UI.updateStats(); UI.updateInventory();
+        SaveSystem.saveLocal();
     }
 };
 
@@ -665,96 +692,49 @@ const Tree = {
         const vp = document.getElementById('tree-viewport');
         vp.addEventListener('mousedown', e => {
             if(e.target.closest('.tree-node')) return;
-            session.tree.dragging = true;
-            session.tree.lx = e.clientX; session.tree.ly = e.clientY;
+            session.tree.dragging = true; session.tree.lx = e.clientX; session.tree.ly = e.clientY;
         });
         window.addEventListener('mouseup', () => session.tree.dragging = false);
         window.addEventListener('mousemove', e => {
             if(!session.tree.dragging) return;
-            session.tree.x += e.clientX - session.tree.lx;
-            session.tree.y += e.clientY - session.tree.ly;
+            session.tree.x += e.clientX - session.tree.lx; session.tree.y += e.clientY - session.tree.ly;
             session.tree.lx = e.clientX; session.tree.ly = e.clientY;
             Tree.apply();
         });
         vp.addEventListener('wheel', e => { e.preventDefault(); Tree.zoom(e.deltaY > 0 ? -0.1 : 0.1); });
-        Tree.render();
-        Tree.apply();
+        Tree.render(); Tree.apply();
     },
-    zoom: (d) => {
-        session.tree.scale = Math.max(0.4, Math.min(2.0, session.tree.scale + d));
-        Tree.apply();
-    },
-    reset: () => {
-        session.tree = { x: window.innerWidth/2, y: window.innerHeight/3, scale: 1, dragging: false, lx: 0, ly: 0 };
-        Tree.apply();
-    },
-    apply: () => {
-        document.getElementById('tree-container').style.transform = 
-            `translate(${session.tree.x}px, ${session.tree.y}px) scale(${session.tree.scale})`;
-    },
+    zoom: (d) => { session.tree.scale = Math.max(0.3, Math.min(2.0, session.tree.scale + d)); Tree.apply(); },
+    reset: () => { session.tree = { x: window.innerWidth/2, y: window.innerHeight/3, scale: 1, dragging: false, lx: 0, ly: 0 }; Tree.apply(); },
+    apply: () => { document.getElementById('tree-container').style.transform = `translate(${session.tree.x}px, ${session.tree.y}px) scale(${session.tree.scale})`; },
     render: () => {
-        const svg = document.getElementById('tree-lines');
-        const cont = document.getElementById('tree-container');
-        
-        // Clear old
-        Array.from(cont.querySelectorAll('.tree-node')).forEach(e => e.remove());
-        svg.innerHTML = "";
-
-        // 1. Filter Nodes based on Expansion Logic
-        // A node is visible if it has no reqExp OR if the reqExp node is bought
+        const svg = document.getElementById('tree-lines'); const cont = document.getElementById('tree-container');
+        Array.from(cont.querySelectorAll('.tree-node')).forEach(e => e.remove()); svg.innerHTML = "";
         const visibleNodes = TREE_NODES.filter(n => !n.reqExp || state.tree[n.reqExp]);
-
         visibleNodes.forEach(node => {
-            // 2. Draw Lines to Parents
             node.parents.forEach(pid => {
                 const p = TREE_NODES.find(n => n.id === pid);
-                if(!p || !visibleNodes.includes(p)) return; // Don't draw line if parent hidden
-
+                if(!p || !visibleNodes.includes(p)) return;
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                // Offset +22 (half of 44px) or +27 (half of 54px expansion)
-                const off1 = p.type === 'expansion' ? 27 : 22;
-                const off2 = node.type === 'expansion' ? 27 : 22;
-
+                const off1 = p.type === 'expansion' ? 27 : 22; const off2 = node.type === 'expansion' ? 27 : 22;
                 path.setAttribute('d', `M${p.x + off1} ${p.y + off1} L${node.x + off2} ${node.y + off2}`);
-                
-                // Class Logic for Green/Red Lines
                 let lineClass = 'conn-line';
-                if(state.tree[node.id]) {
-                    lineClass += ' owned'; // Green
-                } else if(state.tree[p.id]) {
-                    // Parent owned, check affordability
-                    if(state.coins >= node.cost) lineClass += ' available'; // Yellow/Dash
-                    else lineClass += ' blocked'; // Red
-                }
-                
+                if(state.tree[node.id]) lineClass += ' owned';
+                else if(state.tree[p.id]) { if(state.coins >= node.cost) lineClass += ' available'; else lineClass += ' blocked'; }
                 path.setAttribute('class', lineClass);
                 svg.appendChild(path);
             });
-
-            // 3. Draw Node
             const el = document.createElement('div');
-            const owned = state.tree[node.id];
-            const parentsMet = node.parents.every(pid => state.tree[pid]);
-            
-            let cls = 'tree-node';
-            if(node.type === 'expansion') cls += ' expansion';
-            
-            if(owned) cls += ' unlocked';
-            else if(parentsMet) cls += ' available';
-            
-            el.className = cls;
-            el.style.left = node.x + 'px';
-            el.style.top = node.y + 'px';
-            el.innerHTML = `<i>${node.icon}</i>`;
-            
+            const owned = state.tree[node.id]; const parentsMet = node.parents.every(pid => state.tree[pid]);
+            let cls = 'tree-node'; if(node.type === 'expansion') cls += ' expansion';
+            if(owned) cls += ' unlocked'; else if(parentsMet) cls += ' available';
+            el.className = cls; el.style.left = node.x + 'px'; el.style.top = node.y + 'px'; el.innerHTML = `<i>${node.icon}</i>`;
             el.onclick = (e) => { e.stopPropagation(); Actions.buyNode(node.id); };
-            
             el.onmouseenter = () => {
                 const color = owned ? '#00b894' : (parentsMet ? (state.coins>=node.cost ? '#fdcb6e' : '#d63031') : '#555');
                 Tooltip.show(node.name, [{label:'Effect',val:node.desc}], color, owned?"Owned":node.cost, !parentsMet);
             };
             el.onmouseleave = Tooltip.hide;
-            
             cont.appendChild(el);
         });
     }
@@ -767,8 +747,7 @@ const Tooltip = {
         let html = `<h3 style="color:${color}">${title}</h3>`;
         rows.forEach(r => html += `<div class="row"><span>${r.label}</span><span class="val">${r.val}</span></div>`);
         if(cost) html += `<div class="cost ${locked?'locked':''}">${cost} Coins</div>`;
-        Tooltip.el.innerHTML = html;
-        Tooltip.el.classList.add('visible');
+        Tooltip.el.innerHTML = html; Tooltip.el.classList.add('visible');
     },
     hide: () => Tooltip.el.classList.remove('visible'),
     move: (e) => {
@@ -779,75 +758,54 @@ const Tooltip = {
     showCurrentAura: () => {
         if(!session.currentAura) return;
         const a = session.currentAura;
-        Tooltip.show(a.name, [
-            {label:"Rarity", val:CONFIG.rarityTiers[a.tier].name},
-            {label:"Chance", val:`1 in ${a.rarity.toLocaleString()}`},
-            {label:"Value", val:a.coins}
-        ], a.color);
+        Tooltip.show(a.name, [{label:"Chance", val:`1 in ${a.rarity.toLocaleString()}`},{label:"Value", val:a.coins}], a.color);
     }
 };
 
 const UI = {
     init: () => {
-        Resizer.init();
-        Tree.init();
-        UI.renderStaticTabs();
+        Resizer.init(); Tree.init(); UI.renderStaticTabs();
         document.getElementById('roll-btn').onclick = Actions.roll;
         document.addEventListener('mousemove', Tooltip.move);
-        
-        // Restore State check
-        if(state.tree['auto']) document.getElementById('auto-check').disabled = false;
-        
+        SaveSystem.loadLocal(); // Load on start
         GameLoop.start();
+        setInterval(SaveSystem.saveLocal, 30000); // Auto save interval
     },
     updateStats: () => {
         document.getElementById('stat-rolls').innerText = state.rolls.toLocaleString();
         document.getElementById('stat-coins').innerText = state.coins.toLocaleString();
         document.getElementById('stat-luck').innerText = RNG.getLuck().toFixed(1) + "x";
-        
-        // Lucky Counter
         const prog = state.luckyProgress;
-        const max = CONFIG.luckyThreshold;
         const lc = document.getElementById('lucky-counter');
         const btn = document.getElementById('roll-btn');
-        
-        if(prog >= max) {
-            lc.innerText = "LUCKY ROLL READY";
-            lc.classList.add('ready');
-            btn.classList.add('lucky');
-        } else {
-            lc.innerText = `Lucky Roll: ${prog}/${max}`;
-            lc.classList.remove('ready');
-            btn.classList.remove('lucky');
-        }
+        if(prog >= CONFIG.luckyThreshold) { lc.innerText = "LUCKY ROLL READY"; lc.classList.add('ready'); btn.classList.add('lucky'); } 
+        else { lc.innerText = `Lucky Roll: ${prog}/${CONFIG.luckyThreshold}`; lc.classList.remove('ready'); btn.classList.remove('lucky'); }
     },
     updateInventory: () => {
-        // Only render if visible to save performance
         const cont = document.querySelector('#tab-inventory .content-scroll');
         if(cont.parentElement.style.display === 'none') return;
-        
         cont.innerHTML = "";
         const keys = Object.keys(state.inventory).filter(k => state.inventory[k] > 0);
         keys.map(k => AURAS.find(a => a.id === k)).sort((a,b)=>b.rarity-a.rarity).forEach(a => {
              const d = document.createElement('div');
              d.className='inv-item'; d.style.borderLeftColor=a.color;
-             d.innerHTML = `<span style="color:${a.color};font-weight:bold">${a.name}</span><span class="inv-count">x${state.inventory[a.id]}</span>`;
-             d.onmouseenter = () => Tooltip.show(a.name, [{label:"Tier",val:CONFIG.rarityTiers[a.tier].name}], a.color, `${a.coins} Coins`);
+             d.innerHTML = `
+                <div class="inv-head"><span class="inv-name" style="color:${a.color}">${a.name}</span><span class="inv-count">x${state.inventory[a.id]}</span></div>
+                <button class="sell-btn" onclick="Actions.sell('${a.id}')">SELL (${Math.floor(a.coins*0.1)})</button>
+             `;
+             d.onmouseenter = () => Tooltip.show(a.name, [{label:"Rarity",val:`1 in ${a.rarity.toLocaleString()}`}], a.color);
              d.onmouseleave = Tooltip.hide;
              cont.appendChild(d);
         });
     },
     renderStaticTabs: () => {
-        const shop = document.querySelector('#tab-shop .content-scroll');
-        shop.innerHTML = "";
+        const shop = document.querySelector('#tab-shop .content-scroll'); shop.innerHTML = "";
         SHOP_ITEMS.forEach(i => {
             const c=document.createElement('div'); c.className='card';
             c.innerHTML=`<h4>${i.name}</h4><p>${i.desc}</p><button onclick="Actions.buyShop('${i.id}')">${i.cost}</button>`;
             shop.appendChild(c);
         });
-
-        const craft = document.querySelector('#tab-crafting .content-scroll');
-        craft.innerHTML = "";
+        const craft = document.querySelector('#tab-crafting .content-scroll'); craft.innerHTML = "";
         RECIPES.forEach(r => {
              const c=document.createElement('div'); c.className='card';
              c.innerHTML=`<h4>${r.desc.split('->')[1] || 'Craft'}</h4><p>${r.desc}</p><button onclick="Actions.craft('${r.id}')">Craft</button>`;
@@ -855,57 +813,44 @@ const UI = {
         });
     },
     animateRoll: (a, lucky) => {
-        const disp = document.getElementById('aura-display');
-        disp.classList.remove('show');
+        const disp = document.getElementById('aura-display'); disp.classList.remove('show');
         setTimeout(() => {
             document.getElementById('aura-name').innerText = a.name;
             document.getElementById('aura-name').style.color = a.color;
             document.getElementById('aura-name').style.textShadow = `0 0 30px ${a.color}`;
             document.getElementById('aura-rarity').innerText = `1 in ${a.rarity.toLocaleString()}`;
             disp.classList.add('show');
-            if(lucky) {
-                 document.body.style.boxShadow = `inset 0 0 100px ${a.color}`;
-                 setTimeout(()=>document.body.style.boxShadow='none', 800);
-            } else if(a.tier >= 4) {
-                 document.body.style.boxShadow = `inset 0 0 50px ${a.color}`;
-                 setTimeout(()=>document.body.style.boxShadow='none', 400);
-            }
+            if(lucky) { document.body.style.boxShadow = `inset 0 0 100px ${a.color}`; setTimeout(()=>document.body.style.boxShadow='none', 800); }
         }, 50);
     },
     renderBuffs: () => {
         const b = document.getElementById('active-buffs');
         const now = Date.now();
-        b.innerHTML = session.activeBuffs.map(buff => `<div class="buff">${buff.name}: ${Math.ceil((buff.expireTime-now)/1000)}s</div>`).join('');
+        b.innerHTML = state.activeBuffs.map(buff => `<div class="buff">${buff.name}: ${Math.ceil((buff.expireTime-now)/1000)}s</div>`).join('');
     },
     toast: (msg, type='info') => {
         const t=document.createElement('div'); t.className='toast'; t.innerText=msg;
         if(type==='error') t.style.borderLeftColor=CONFIG.rarityTiers[5].color; 
         else if(type==='success') t.style.borderLeftColor=CONFIG.rarityTiers[7].color; 
-        document.getElementById('toast-container').appendChild(t);
-        setTimeout(()=>t.remove(), 3000);
+        document.getElementById('toast-container').appendChild(t); setTimeout(()=>t.remove(), 3000);
     }
 };
+
+const Resizer = { init: () => {
+    const h = document.getElementById('resize-handle'); const p = document.getElementById('controls-wrapper'); let isResizing = false;
+    h.addEventListener('mousedown', (e) => { isResizing = true; e.preventDefault(); });
+    window.addEventListener('mouseup', () => isResizing = false);
+    window.addEventListener('mousemove', (e) => { if(!isResizing) return; p.style.height = Math.max(200, Math.min(window.innerHeight*0.75, window.innerHeight - e.clientY)) + 'px'; });
+}};
 
 const GameLoop = {
     start: () => requestAnimationFrame(GameLoop.tick),
     tick: () => {
         const now = Date.now();
-        // Auto Roll Check
-        if (state.tree['auto'] && state.autoEnabled && now - session.lastRollTime >= session.currentCooldown) {
-            Actions.roll();
-        }
-        
-        // Cooldown Bar
+        if (state.tree['auto'] && state.autoEnabled && now - session.lastRollTime >= session.currentCooldown) Actions.roll();
         const prog = Math.min(1, (now - session.lastRollTime) / session.currentCooldown);
-        const bar = document.getElementById('cooldown-bar');
-        bar.style.width = (prog * 100) + '%';
-        bar.style.opacity = prog >= 1 ? 0.5 : 1;
-
-        // Buffs Expiry
-        if(session.activeBuffs.length) {
-            session.activeBuffs = session.activeBuffs.filter(b => b.expireTime > now);
-            UI.renderBuffs();
-        }
+        document.getElementById('cooldown-bar').style.width = (prog * 100) + '%';
+        if(state.activeBuffs.length) { state.activeBuffs = state.activeBuffs.filter(b => b.expireTime > now); UI.renderBuffs(); }
         requestAnimationFrame(GameLoop.tick);
     }
 };
@@ -914,12 +859,18 @@ function switchTab(id) {
     document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
     document.getElementById(`tab-${id}`).classList.add('active');
-    
-    // Find index for button highlight
-    const idx = ['inventory','tree','shop','crafting'].indexOf(id);
+    const idx = ['inventory','tree','shop','crafting','settings'].indexOf(id);
     if(idx > -1) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
-    
     if(id==='inventory') UI.updateInventory();
+    
+    // Reset confirmation state when switching away
+    if(id !== 'settings' && session.resetStage > 0) {
+        session.resetStage = 0;
+        document.getElementById('reset-btn').innerText = "Reset Everything";
+        document.getElementById('reset-btn').style.background = "";
+        document.getElementById('reset-btn').style.color = "";
+        document.getElementById('reset-warning').classList.remove('visible');
+    }
 }
 
 window.onload = UI.init;
